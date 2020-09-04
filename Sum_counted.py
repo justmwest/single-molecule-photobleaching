@@ -37,7 +37,7 @@ import pandas as pd
 # Test path 1: /Users/Justin/Documents/Projects/InProgress/TM-EphA2-PIP2/Data/SMALPs/SM bleaching/2019-12-20 copy analyses/2019-12-23_07-51-05/
 # Test path 2: /Users/Justin/Documents/Projects/InProgress/TM-EphA2-PIP2/Data/SMALPs/SM bleaching/2019-11-30/
 
-path = "/Users/Justin/Documents/Projects/InProgress/TM-EphA2-PIP2/Data/SMALPs/SM bleaching/2019-10-30 analyses/2019-12-27_08-43-46/"
+path = "/Users/Justin/Documents/Projects/InProgress/TM-EphA2-PIP2/Data/SMALPs/SM bleaching/2020-02-20 analyses/2020-02-23_17-04-53/"
 os.chdir(path);
 dir_names = sorted(next(os.walk(path))[1]) # get directory names
 n_dir = len(dir_names) # get the number of directories in path
@@ -79,12 +79,20 @@ def get_n_traces(directory, movie):
     '''
     os.chdir(path)
     os.chdir(dir_names[directory])
-    fname = "hel"+str(movie)+".traces"
-    fid = open(fname,'r') # the open file object
-    length = int(np.fromfile(fid,'int32', 1)) # number of timesteps, must keep.
-    n_traces = int(np.fromfile(fid, 'int16', 1)) # number of traces
-    n_traces = int(n_traces/2)
-    fid.close()
+    os.chdir("hel"+str(movie))
+    subdirs = sorted(next(os.walk(os.getcwd()))[1])
+    n_traces = 0
+    for folder in subdirs:
+        os.chdir(folder)
+        counted = len([name for name in os.listdir('.') if os.path.isfile(name)])
+        n_traces += counted
+        os.chdir("..")
+#    fname = "hel"+str(movie)+".traces"
+#    fid = open(fname,'r') # the open file object  ### ERROR ###
+#    length = int(np.fromfile(fid,'int32', 1)) # number of timesteps, must keep.
+#    n_traces = int(np.fromfile(fid, 'int16', 1)) # number of traces
+#    n_traces = int(n_traces/2)
+#    fid.close()
     os.chdir(path)
     return n_traces
 

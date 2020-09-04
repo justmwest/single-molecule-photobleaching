@@ -6,15 +6,14 @@ Created on Sat Dec 21 11:12:11 2019
 @author: Justin
 """
 
-#Outline for this script
-#Step 1: Find this notebook
-#Step 2: Make assignment folders in all subdirectories (1 step, etc.)
-#Step 3: Make a matrix with the dimensions of the directory (expts, movies)
-#Step 4: Make a randomly ordered list of the coordinates of each movie
-#Step 5: Start list, open graph, prompt user to input count
-#Step 6: Copy the data to the corresponding subdirectory, close graph
-#Step 7: Repeat steps 5 & 6 until end of list
-#Step 8: Show a table of the final results
+# Outline for this script
+# Step 1: Select path and get metadata
+# Step 2: Shuffle order of movies
+# Step 3: Make directories
+# Step 4: Read data
+# Step 5: Main analysis window
+# Step 6: Counting report
+
 
 import glob
 import os
@@ -27,26 +26,20 @@ from datetime import datetime
 from tabulate import tabulate
 
 
-######### Step 1 #########
-### Find this notebook ###
-##########################
+############## Step 1 ##############
+### Select path and get metadata ###
+####################################
 
 
-
-
-
-#set path for the day, not the slide/experiment
-path = "/Users/Justin/Documents/Projects/InProgress/TM-EphA2-PIP2/Data/SMALPs/SM bleaching/2019-12-20 copy/"
+# set path for the day. Should contain multiple slides/experiments
+path = "/Users/Justin/Documents/Projects/InProgress/TM-EphA2-PIP2/Data/SMALPs/SM bleaching/2020-02-28/"
 os.chdir(path);
-dir_names = sorted(next(os.walk(path))[1])
-n_dir = len(dir_names) #get the number of subdirectories in path
+dir_names = sorted(next(os.walk(path))[1]) # get subdirectory names
+n_dir = len(dir_names) # get the number of subdirectories in path
 print(n_dir," folders")
 
 
-
-
-
-#gen a list of the number of movies in each subdirectory
+# get the nubmer of movies
 extension = 'traces'
 def get_n_movies(directory):
     '''
@@ -71,9 +64,7 @@ for i in n_movies:
 print(sum_movies," movies total")
 
 
-
-
-
+# get the nubmer of traces / molecules
 def get_n_traces(directory,movie):
     '''
     input:
@@ -102,16 +93,17 @@ print("The total number of molecules collected is "+str(grand_total_traces))
 
 
 
-
-
+############## Step 2 ##############
+##### Shuffle order of movies ######
+####################################
 
 def get_coordinates(number):
     '''
     Returns coordinates for the molecule number entered by
     making a list of coordinates of len grand_total_traces
-    input:
+    Input:
         int, between 0 and grand_total_traces
-    output:
+    Output:
         list, coordinates [directory, movie, trace]
     Dependencies:
         function, get_n_traces
@@ -137,12 +129,14 @@ def get_coordinates(number):
     #print(len(top_lvl_lofl)) #test, should match n of molecules
     return top_lvl_lofl[number]
 
-
-    
 def gen_master_list():
     '''
-    Makes a counting list of len grand_total_traces,
-    Then shuffles it to make the order of files
+    Randomization function:
+        Makes a list of len grand_total_traces, then shuffles it.
+    Input:
+        null
+    Output:
+        list of ints, the order that the files will be analyzed
     '''
     tmp_list = list(range(grand_total_traces))
     random.shuffle(tmp_list)
@@ -150,13 +144,10 @@ def gen_master_list():
 order = gen_master_list()
 
 
-
-
-
-##########################
-#### Make Directories ####
-##########################
-#   I would like to make a new directory tree for each analysis.
+############## Step 3 ##############
+######### Make Directories #########
+####################################
+#   Making a new directory tree for each analysis.
 #   That way, I don't have to worry about data loss when starting
 #   a new analysis. 
 
@@ -194,9 +185,9 @@ for j in range(len(dir_names)):
 
 
 
-##########################
-####### Read data ########
-##########################
+############## Step 4 ##############
+############ Read data #############
+####################################
 #   Here is where I make the functions to use in the main analysis.
             
 timeunit=0.1
@@ -237,6 +228,8 @@ def read_data(coordinates):
     global donor, acceptor, time 
     donor = np.zeros((n_traces//2, length)) #gen empty array for donor
     acceptor = np.zeros((n_traces//2, length)) #gen empty array for acceptor
+    if n_traces % 2 != 0: #fix for files with unmatched traces (e.g., donor-only)
+        n_traces -= 1
     for i in range(0,int(n_traces),2): #populate donor and acceptor arrays
        donor[i//2] = data[i]
        acceptor[i//2] = data[i+1]
@@ -290,22 +283,22 @@ def export(data_list,file_name="untitled.xlsx"):
             list_for_export.append(each.flatten())
     df = pd.DataFrame(list_for_export, index=None)
     df = df.T
-    df.to_excel(file_name,index=None,header=None)
+    df.to_csv(file_name,index=None,header=None)
     
     
 def has_numbers(inputString):
     '''
-    returns True if the string contains numbers
+    returns True if inputString contains numbers
     '''
     return any(char.isdigit() for char in inputString)
 
 
-##########################
-## Main analysis window ##
-##########################
+############## Step 5 ##############
+####### Main analysis window #######
+####################################
 #   I would like to add a user input: "blinded?"
 #   I would like to add a 'save state' and 'load state' feature
-#   to continue with previous analyses.     
+#   to continue with previous analyses.    
 
 i=0
 while i < grand_total_traces: #switch to grand_total_traces for full version
@@ -323,7 +316,7 @@ while i < grand_total_traces: #switch to grand_total_traces for full version
     if ans == 'f':
         jump = input('How many do you want to skip? Enter an integer: ')
         i = i+int(jump)-1;
-#
+
 #    #go to, not enabled
     if ans == 'g': 
         print()
@@ -336,7 +329,7 @@ while i < grand_total_traces: #switch to grand_total_traces for full version
         read_data(coordinates)
         plot(False)
         i-=5; # I have no idea why this needs to be 5, else it skips ahead.
-#
+
 #    #save image not enabled
 #    if ans=='s'
 #        saveas(temp_image,'temp.jpg');  #JPG format
@@ -344,15 +337,16 @@ while i < grand_total_traces: #switch to grand_total_traces for full version
     if ans == 'h':
         print('''
               
+              1-8   = assign n steps to molecule
               enter = pass / reject molecule
               b     = go back and reassign last
               x     = exit
               f     = skip forward
-              g     = go to a molecule
+              g     = go to a specific molecule
               id    = display molecule coordinates
               
               In development:
-              s     = save an image of the molecule
+              s     = save an image of the figure
               
               ''')
         i-=1
@@ -378,7 +372,7 @@ while i < grand_total_traces: #switch to grand_total_traces for full version
             #print(step_dir) # to make sure you're looking everywhere
             for file in os.listdir():
                 if file.split('_')[0] == find_name:
-                    os.remove(file)
+                    os.remove(file) # delete the assigned file
                     #print('Assignment for '+file+' deleted.') #unblinded only
                     print('Assignment for previous file deleted.')
                     print('Please reassign.')
@@ -386,11 +380,11 @@ while i < grand_total_traces: #switch to grand_total_traces for full version
         i-=1
 
     #enter, reject, pass, move on, etc. 
-    elif ans in ('',0,'p'):
+    elif ans in ('','0','p','r'):
         i=i
         os.chdir(current_analysis_path)
         os.chdir(dir_names[directory]+"/hel"+str(movie)+"/Rejected")
-        output_file_name = "d"+str(directory)+"-m"+str(movie)+"-t"+str(trace)+"_R.xlsx"
+        output_file_name = "d"+str(directory)+"-m"+str(movie)+"-t"+str(trace)+"_R.csv"
         data_list=[time, donor[trace-1], acceptor[trace-1]-leakage*donor[trace-1]]
         export(np.array(data_list),output_file_name) #saves a file
         os.chdir(path)
@@ -407,7 +401,11 @@ while i < grand_total_traces: #switch to grand_total_traces for full version
     #Photobleaching Steps
     #I would like to see if saving as a .csv or .txt would save space.
     elif has_numbers(ans):
-        if int(ans) <= 8:
+        if int(ans) < 0:
+            print('''Input error: input must be between 1 and 8. 
+                  Please try again.''')
+            i-=1
+        elif 1 <= int(ans) <= 8:
             step = int(ans)
             if step == 1:
                 suffix = " step"
@@ -415,26 +413,30 @@ while i < grand_total_traces: #switch to grand_total_traces for full version
                 suffix = " steps"
             os.chdir(current_analysis_path)
             os.chdir(dir_names[directory]+"/hel"+str(movie)+"/"+str(step)+suffix)
-            output_file_name = "d"+str(directory)+"-m"+str(movie)+"-t"+str(trace)+"_"+str(step)+"s.xlsx"
+            output_file_name = "d"+str(directory)+"-m"+str(movie)+"-t"+str(trace)+"_"+str(step)+"s.csv"
             data_list=[time, donor[trace-1], acceptor[trace-1]-leakage*donor[trace-1]]
             export(np.array(data_list),output_file_name) #saves a file
             os.chdir(path)
             #j=j+1; #these counters were in the original matlab notebook.
             #mN(j)=i; #I haven't figured out what they're for.
-
+        else:
+            print('''Input error: input must be between 1 and 8. 
+                  Please try again.''')
+            i-=1
+    
+    elif ans not in ('g','s','f','h','q','x','p','r','','0','id') and not has_numbers(ans):
+        print('''Input error: Command not recognized. 
+                  Please try again.''')
+        i-=1
 
 
 
 
     i+=1
 
-##########################
-#### Counting report #####
-##########################
-#   Here I would like to display a table with statistics
-#   on the recently counted data. I would also like to 
-#   make this a standalone script, so it must look nice!
-#
+############## Step 6 ##############
+######### Counting report ##########
+####################################
 #   I need to add an export function for this data.
 
 

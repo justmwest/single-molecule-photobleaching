@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 # Reference values
 n_smalps = 100000
-peptides_per_smalp = 1
+peptides_per_smalp = 0.0975
 
 # Reference functions
 smalp_core_radius_mean = 38
@@ -162,6 +162,9 @@ def randomly_assign_occupancy(n_labeled_list, matrix):
     
 
 def matrix_to_histogram(matrix):
+    """ Show the results of the simulation in histogram format
+    Ref section 5.1.1 number 6, first sentence.
+    """
     num_columns = matrix.shape[1]
 
     for col in range(num_columns):
@@ -172,27 +175,25 @@ def matrix_to_histogram(matrix):
         plt.figure()
         plt.hist(matrix[:, col], bins=n_bins, color='skyblue', edgecolor='black', alpha=0.9)
         plt.ylabel('Frequency')
-        plt.xlabel('Number of fluorophores')
+        plt.xlabel('Theoretical number of fluorophores observed')
         plt.title(f'Distribution of peptides with {col} label(s)')
 
     plt.show()
 
 
-
 def simulation(n_peptides, bin_edges):
     """ 
-    asdf 
+    Simulate occupancy of monomers. Return list of matrices, one for each
+    radius bin considered.
     Section 5.1.1 number 5
     """
-    # bin_width = bin_edges[1] - bin_edges[0]
     matrix_list = []
     
     # For each radius bin
-    for i in tqdm(range(len(bin_edges))):
+    for i in tqdm(range(len(bin_edges)), desc="Running siumulation for each radius"):
         if i > 0:
             bin_start = bin_edges[i-1]
             bin_end = bin_edges[i]
-            bin_center = (bin_start + bin_end) / 2 # Average radius in bin
             
             # Calculate how many SMALPs have that radius
             n_rows = calc_n_rows(bin_start, bin_end)
@@ -210,26 +211,76 @@ def simulation(n_peptides, bin_edges):
             occupied_matrix = randomly_assign_occupancy(n_labeled_list, matrix)
             
             matrix_list.append(occupied_matrix)
-
-            if i < 5:
-                print(f"\nRadius: {bin_center}")
-                print(f"N peptides in bin: {n_peptides_in_bin}")
-                print(f"Number of rows in the matrix: {n_rows}")
-                print(f"N_labeled_list: {n_labeled_list}")
-                print(occupied_matrix)
     
     return matrix_list
-                
-                
-            
-            
-            
-    
-matrix_list = simulation(n_peptides, bin_edges)
 
-matrix_to_histogram(matrix_list[10])
-    
 
+# matrix_to_histogram(combined_matrix)
+def print_sim_results(matrix_list):
+    """ Prints counts of different fluorophore numbers """
+    
+    # Stack the matrix into one tall array of 3 columns.
+    combined_matrix = np.vstack(matrix_list)
+    
+    # Count up the results
+    uniques, counts = np.unique(combined_matrix, return_counts=True)
+    
+    total_spots = 0
+    print("")
+    for i, (unique, count) in enumerate(zip(uniques, counts)):
+        frequency = count / n_peptides
+        print(f"{unique}: {count} / {n_peptides} = {frequency}")
+        
+        # Add up the number of spots observed, skipping over 0-steps
+        if i > 0:
+            total_spots += count
+            
+    print(f"Sum of the entire matrix (number of fluorophores): {combined_matrix.sum()}")
+    print(f"Total number of peptides: {n_peptides}")
+    print(f"Total spots observed: {total_spots}")
+
+def calc_p_star(matrix_list):
+    """ Calculate the probability of observing 1, 2, or 3+ steps. 
+    Ref: section 5.1.1 numbers 6 and 7 """
+    # Stack the matrix into one tall array of 3 columns.
+    combined_matrix = np.vstack(matrix_list)
+    
+    # Count up the results
+    uniques, counts = np.unique(combined_matrix, return_counts=True)
+    
+    frequencies = counts / n_smalps
+    
+    # This is normally not zero, but as explained in the function, we assume.
+    # It is not taken from the simulation results.
+    p0 = calc_fraction_unoccupied()
+
+    p1 = frequencies[1] / (1 - p0)
+    
+    p2 = frequencies[2] / (1 - p0)
+    
+    p3plus = sum(frequencies[3:]) / (1 - p0)
+    
+    return p1, p2, p3plus
+
+def main():
+    # Run the simulation
+    matrix_list = simulation(n_peptides, bin_edges)
+    
+    # # Print the results to the python console.
+    # print_sim_results(matrix_list)
+    
+    # # Show the results as a histogram
+    # combined_matrix = np.vstack(matrix_list)
+    # matrix_to_histogram(combined_matrix)
+    
+    # # Show probabilities
+    p1, p2, p3 = calc_p_star(matrix_list)
+    print(f"\nP(1): {p1}")
+    print(f"P(2): {p2}")
+    print(f"P(3+): {p3}")
+    
+if __name__ == "__main__":
+    main()
 
 
             

@@ -7,7 +7,7 @@ Created on Tue Oct 24 19:38:22 2023
 """
 
 # See Chadda & Robertson, 2016. "Measuring membrane protein dimerization equilibrium..."
-# section 5.2
+# section 5.1.1
 
 # Inputs
 def old():

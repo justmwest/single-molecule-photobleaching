@@ -168,25 +168,24 @@ def main():
     total_lipid_area = lipid_area * n_lipids  # Å^2
     peptide_area = radius_to_area(peptide_radius)  # Å^2
     
+    
     # Create a normal distribution for SMALP core radii
     smalp_core_radius_distribution = norm(loc=smalp_core_radius_mean, scale=smalp_core_radius_std_dev)
     
     def pradius(radius):
         """ Takes a radius and returns a probability of finding that radius """
-        return smalp_core_radius_distribution.cdf(radius)
+        return smalp_core_radius_distribution.pdf(radius)
+    
     
     def calc_number_of_smalps(radius_list, total_system_area):
         """ Calculates number of SMALPs from the calculated total lipid area 
         and the radius distribution of SMALPs. Will greatly affect results. """
-        total_bilayer_area = total_system_area / 2
         
         number_of_smalps = 0
         
         # np.linspace makes the width the same between any two points.
         bin_width = radius_list[1] - radius_list[0] 
         
-
-
         for i, _ in enumerate(radius_list):
             if i > 0:
                 bin_start_radius = radius_list[i-1]
@@ -195,90 +194,26 @@ def main():
                 # Calculate the radius in the center of the bin
                 bin_average_radius = (bin_start_radius + bin_end_radius) / 2
                 
-                # Calculate the bin width as area.
-                # We need to convert the distance between the bins into units of 
-                # area, since a smalp with a given radius will take up 
-                # an area amount of bilayer lipid. 
-                # Since the area equation involves a square, the difference
-                # in area is *not the same* from bin to bin. 
-                # You can test this yourself:
-                #   radius_to_area(51) - radius_to_area(50) = 317.3
-                #   radius_to_area(29) - radius_to_area(28) = 179.1
-                # the bins both differ by radius 1, but by different areas.
-                bin_start_area = radius_to_area(bin_start_radius)
-                bin_end_area = radius_to_area(bin_end_radius)
-                bin_width_as_area = bin_end_area - bin_start_area
+                # Calculate the lipid surface area taken up by a SMALP with this radius.
+                bin_average_area = (radius_to_area(bin_average_radius) * 2) # Å^2 * 2
         
                 # It doesn't matter that we use the probability from the radius
                 # distribution since the probability is unitless.
                 probability = pradius(bin_average_radius)
                 
                 # This is the estimated area under the area distribution curve.
-                probability_density = probability * bin_width_as_area
+                probability_density = probability * bin_width
                 
-                number = total_bilayer_area * probability_density
+                # Calculate how much of the system area is taken up by this bin
+                area_within_bin = total_system_area * probability_density
                 
-                number_of_smalps += number
-        
-        return number_of_smalps
-        
-    
-    def test_calc_number_of_smalps(peptide_concentration):
-        """ This function shows that there is a asymptotic relationship between
-        the number of bins and the number of SMALPs calculated. The choice of 
-        number of bins is thus a trade-off between accuracy and computational 
-        cost. I'm not sure why small bin numbers bias in one direction though. """
-        # As it stands, this isn't affecting the result at all.
-        n_peptides = concentration_to_number(peptide_concentration, volume_of_solution) 
-        print(f"n_peptides: {n_peptides}")
-        
-        # We multiply this number by two because the peptide occupies both leaflets.
-        total_peptide_area = (peptide_area*2) * n_peptides
-        print(f"Total peptide area: {total_peptide_area} Å^2")
-        
-        total_system_area = total_lipid_area + total_peptide_area
-        print(f"Total system area: {total_system_area} Å^2")
-        
-        smallest_radius_to_consider = float(smalp_core_radius_mean - (smalp_core_radius_std_dev * 4))
-        largest_radius_to_consider = float(smalp_core_radius_mean + (smalp_core_radius_std_dev * 4))
-        num_bins_list = [1000 * i for i in range(1,50,5)]
-        
-        n_smalps_list =[]
-        for num_bins in num_bins_list:
-            print(f"\nNumber of bins: {num_bins}")
-            
-            # Calculate the radius of each bin based on the number of bins.
-            bin_ranges = np.linspace(smallest_radius_to_consider, largest_radius_to_consider, num_bins + 1)
-            
-            n_smalps = calc_number_of_smalps(bin_ranges, total_system_area)
-            print(f"Number of SMALPs: {np.format_float_scientific(n_smalps)}")
-            
-            n_smalps_list.append(n_smalps)
-        
-        plt.plot(num_bins_list, n_smalps_list)
-        plt.xlabel("Number of bins")
-        plt.ylabel("Number of SMALPs calculated")
-        plt.show()
-        
+                # Calculate how many SMALPs of this radius can fit in this area
+                number_of_smalps_within_bin = area_within_bin / bin_average_area 
+                
+                number_of_smalps += number_of_smalps_within_bin
 
-        
-    def calc_number_of_smalps_simple(radius, peptide_concentration):
-        n_peptides = concentration_to_number(peptide_concentration, volume_of_solution) 
-        print(f"n_peptides: {np.format_float_scientific(n_peptides)}")
-        
-        # We multiply this number by two because the peptide occupies both leaflets.
-        total_peptide_area = (peptide_area*2) * n_peptides
-        print(f"Total peptide area: {total_peptide_area} Å^2")
-        
-        total_system_area = total_lipid_area + total_peptide_area
-        print(f"Total system area: {total_system_area} Å^2")
-        
-        number_of_smalps = total_system_area / (radius_to_area(radius)*2)
-        print(f"Number of SMALPs: {np.format_float_scientific(number_of_smalps)}")
-        
-        print(f"Peptides per SMALP: {n_peptides / number_of_smalps}")
         return number_of_smalps
-    
+        
     
     # Define simulate_occupancy function
     def simulate_occupancy_binned(peptide_concentration, num_simulations=100):
@@ -376,6 +311,7 @@ def main():
     
     # test_calc_number_of_smalps(1.5e-6)
     # calc_number_of_smalps_simple(38,1.5e-6)
+    test_pradius()
 
 
 if __name__ == "__main__":

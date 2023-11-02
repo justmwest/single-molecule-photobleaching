@@ -159,7 +159,7 @@ def main():
     
     def radius_to_area(radius):
         """ Calculates the area of a circle. """
-        return (np.pi * radius ** 2)
+        return np.pi * radius**2
 
     
     # Calculations

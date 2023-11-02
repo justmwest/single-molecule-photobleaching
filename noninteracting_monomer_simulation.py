@@ -132,7 +132,7 @@ def simulate_occupancy(n_peptides, bin_edges, n_smalps, distribution, pfluoropho
     matrix_list = []
     
     # For each radius bin
-    for i in tqdm(range(len(bin_edges)), desc="Running siumulation for each radius"):
+    for i in tqdm(range(len(bin_edges)), desc="Running monomer siumulation for each radius"):
         if i > 0:
             bin_start = bin_edges[i-1]
             bin_end = bin_edges[i]

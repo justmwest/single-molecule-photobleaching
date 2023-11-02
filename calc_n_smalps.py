@@ -11,36 +11,23 @@ not that far off. This likely won't work for a different distribution.
 """
 
 import numpy as np
+from pradius import pradius
 from scipy.constants import N_A # Avogadro's number
+import matplotlib.pyplot as plt
 
-# Constants
-avogadros_number = N_A
-
-# Reference values
-lipid_area = 68.3  # Å^2 at 30°C. Kučerka et al. 2005
-smalp_core_radius_mean = 38  # Å Jamshad et al. 2015
-smalp_core_radius_std_dev = 2  # Å
-peptide_radius = 6  # Å
 
 def concentration_to_number(concentration, volume):
     """ Concentration in M, volume in L """
-    return concentration * volume * avogadros_number
+    return concentration * volume * N_A
 
 def radius_to_area(radius):
     """ Calculates the area of a circle. """
     return (np.pi * radius ** 2)
 
-# Calculations
-pl_ratios = peptide_concentrations / lipid_concentration
-n_lipids = concentration_to_number(lipid_concentration, volume_of_solution)
-total_lipid_area = lipid_area * n_lipids  # Å^2
-peptide_area = radius_to_area(peptide_radius)  # Å^2
 
-
-def calc_number_of_smalps(radius_list, total_system_area):
+def calc_number_of_smalps(radius_list, total_system_area, distribution):
         """ Calculates number of SMALPs from the calculated total lipid area 
         and the radius distribution of SMALPs. Will greatly affect results. """
-        total_bilayer_area = total_system_area / 2
         
         number_of_smalps = 0
         cumulative_probability = 0
@@ -56,12 +43,13 @@ def calc_number_of_smalps(radius_list, total_system_area):
                 # Calculate the radius in the center of the bin
                 bin_average_radius = (bin_start_radius + bin_end_radius) / 2
                 
-                # Calculate the area of a SMALP with bin size radius
+                # Calculate the lipid surface area taken up by a SMALP of a given radius
+                # Multiplied by two because two leaflets.
                 bin_average_area = (radius_to_area(bin_average_radius) * 2) # Å^2 * 2
         
                 # It doesn't matter that we use the probability from the radius
                 # distribution since the probability is unitless.
-                probability = pradius(bin_average_radius)
+                probability = pradius(bin_average_radius, distribution)
                 
                 # This is the estimated area under the area distribution curve.
                 probability_density = probability * bin_width
@@ -76,7 +64,12 @@ def calc_number_of_smalps(radius_list, total_system_area):
         return number_of_smalps
         
     
-def test_calc_number_of_smalps(peptide_concentration):
+########################################################################
+########################## TESTING FUNCTIONS ###########################
+########################################################################
+
+    
+def test_calc_number_of_smalps(peptide_concentration, volume_of_solution, peptide_area, total_lipid_area, smalp_core_radius_mean, smalp_core_radius_std_dev):
     """ This function shows that there is a asymptotic relationship between
     the number of bins and the number of SMALPs calculated. The choice of 
     number of bins is thus a trade-off between accuracy and computational 
@@ -114,8 +107,7 @@ def test_calc_number_of_smalps(peptide_concentration):
     plt.show()
     
 
-    
-def calc_number_of_smalps_simple(radius, peptide_concentration):
+def calc_number_of_smalps_simple(radius, peptide_concentration, volume_of_solution, peptide_area, total_lipid_area):
     n_peptides = concentration_to_number(peptide_concentration, volume_of_solution) 
     print(f"\nn_peptides: {np.format_float_scientific(n_peptides)}")
     
@@ -133,8 +125,28 @@ def calc_number_of_smalps_simple(radius, peptide_concentration):
     return number_of_smalps
 
 
-if __name__ == "__main__":
-    peptide_concentration = 1.5e-6
+def main():
+    # User input
+    volume_of_solution = 200e-6  # L
+    lipid_concentration = 75 * 1e-6  # M
+    test_peptide_concentration = 1.5e-6
     test_radius = 38
-    test_calc_number_of_smalps(peptide_concentration)
-    calc_number_of_smalps_simple(test_radius, peptide_concentration)
+    
+    # Reference values
+    lipid_area = 68.3  # Å^2 at 30°C. Kučerka et al. 2005
+    smalp_core_radius_mean = 38  # Å Jamshad et al. 2015
+    smalp_core_radius_std_dev = 2  # Å
+    peptide_radius = 6  # Å
+    
+    # Calculations
+    n_lipids = concentration_to_number(lipid_concentration, volume_of_solution)
+    total_lipid_area = lipid_area * n_lipids  # Å^2
+    peptide_area = radius_to_area(peptide_radius)  # Å^2
+    
+    # Test zone
+    test_calc_number_of_smalps(test_peptide_concentration, volume_of_solution, peptide_area, total_lipid_area, smalp_core_radius_mean, smalp_core_radius_std_dev)
+    calc_number_of_smalps_simple(test_radius, test_peptide_concentration, volume_of_solution, peptide_area, total_lipid_area)
+
+
+if __name__ == "__main__":
+    main()

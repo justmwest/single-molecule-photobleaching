@@ -1,6 +1,10 @@
 # Ignore images
 *.png
 
+# Ignore reference folders
+matlab_scripts_from_janice
+Probability_of_Peptide_Capture_by_SMALPs
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

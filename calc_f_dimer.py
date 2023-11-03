@@ -12,45 +12,68 @@ Section 5.2 (equation 8)
 """
 
 import numpy as np
-from scipy.optimize import minimize
+import matplotlib.pyplot as plt
 
-def calculate_R2(FDimer, pl, pe, pm, pd):
-    # Calculate R2 for the given FDimer
-    R2 = 0
-    for n in range(1, 4):
-        R2 += (pe[n-1] - ((1 - FDimer) * pm[n-1] + FDimer * pd[n-1]))**2
-    return R2
 
-def fit_FDimer(pl, pe, pm, pd):
-    # Define the objective function for least-squares minimization
-    def objective_func(FDimer):
-        return calculate_R2(FDimer, pl, pe, pm, pd)
-
-    # Use minimize function to find the value of FDimer that minimizes R2
-    result = minimize(objective_func, x0=0.5, bounds=[(0, 1)], method='SLSQP')  # Initial guess: 0.5
-
-    return result.x[0]
+def fit_frac_dimer(pe, pm, pd):
+    """ 
+    This function is made to calculate the fraction of dimer
+    by minimization of the sum of squared residuals between simulated
+    ideal monomers and dimers 
+    Adapted from Chadda & Robertson JGP 2017 MatLab app.
     
+    pe, pm, pd: each is a list of 3 probabilities in order. [p1, p2, p3+]
+    pe = Experimentally determined probabilities
+    pm = Simulated probabilities for noninteracting monomers
+    pd = Simulated probabilities for noninteracting dimers
+    """
+    # Create an array of dimer fractions (0 to 1) with a step of 0.01
+    FD = np.arange(0, 1.01, 0.01)
+    nFD = FD.shape  # Get the size of the FD array
+    
+    N = 3  # number of data points
+    
+    # Calculation of the sum of squared residuals (R2)
+    R2 = []
+    for i in range(nFD[0]):
+        total_sum = 0
+        for k in range(N):
+            Pfit = (1 - FD[i]) * pm[k] + FD[i] * pd[k]
+            total_sum += (pe[k] - Pfit) ** 2
+        R2.append(total_sum)
+    
+    # Plotting the results
+    plt.semilogy(FD, R2)
+    plt.xlabel('Dimer Fraction (FD)')
+    plt.ylabel('Sum of Squared Residuals (R2)')
+    plt.title('Least-Squares Analysis')
+    plt.show()
+    
+    # Minimum R2 value and Fdimer prediction
+    min_R2 = min(R2)
+    min_R2_index = R2.index(min_R2)
+    Fdimer_prediction = FD[min_R2_index]
+    
+    print(f"Minimum R2 value: {min_R2}")
+    print(f"Fdimer prediction: {Fdimer_prediction}")
+
+    
+
 
 
 def main():
     # User input
     peptide_concentrations = np.array([1.5, 0.75, 0.46875, 0.375, 0.1875, 0.09375])*1e-6
-    lipid_concentration = 200e-6
+    lipid_concentration = 75e-6
     pl = peptide_concentrations/lipid_concentration
    
-    monomer = np.array([24.45141066, 45.80645161, 61.49425287, 68.6, 72.92225201])
-    dimer = np.array([51.41065831, 41.61290323, 31.6091954, 26.4, 23.05630027])
-    trimer_plus = np.array([24.13793103, 12.58064516, 6.896551724, 5, 4.021447721])
-    
-    # Create a 2D array 'pe' by stacking the individual arrays
-    pe = np.vstack((monomer, dimer, trimer_plus)).T.tolist()
-    
-    # Convert to a list of lists
-    pe = [list(pe_i) for pe_i in pe]
-    
-    # Now 'pe' is a list of lists with the desired structure
-    print(pe)
+    # List of p1, p2, p3+ from experimental data
+    # No value for peptide concentration 0.09375e-6
+    pe = [[0.024451410660000002, 0.05141065831, 0.02413793103], 
+          [0.04580645161000001, 0.041612903230000005, 0.012580645159999999], 
+          [0.061494252869999995, 0.0316091954, 0.0068965517240000005], 
+          [0.0686, 0.0264, 0.005], 
+          [0.07292225201, 0.023056300270000003, 0.004021447721]]
     
     # These values were generated from sim_occ_over_pls
     # List of p1, p2, p3+ for noninteracting monomers
@@ -69,17 +92,15 @@ def main():
           [0.0179, 0.0409, 1.9054999999999993],
           [0.1128, 0.2557, 1.4496]]  # List of pd values for different pl values
 
-    # Example usage to fit FDimer as a function of pl
-    FDimer_values = []
-    for pe_i, pm_i, pd_i in zip(pe, pm, pd):
-        FDimer_value = fit_FDimer(pl, pe_i, pm_i, pd_i)
-        FDimer_values.append(FDimer_value)
+    fit_frac_dimer(pe[1], pm[1], pd[1])
+
+    pe_1=[sublist[0] for sublist in pe]
+    pe_2=[sublist[1] for sublist in pe]
+    pe_3=[sublist[2] for sublist in pe]
     
-    print("FDimer values:", FDimer_values)
-
-
-
-    
+    print(pe_1)
+    print(pe_2)
+    print(pe_3)
     
     
     

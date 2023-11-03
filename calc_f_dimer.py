@@ -15,6 +15,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+def least_squares_plot(FD, R2, Fdimer_prediction):
+    """
+    Plots the results of least-squares analysis.
+    """
+    plt.semilogy(FD, R2)
+    plt.axvline(x=Fdimer_prediction, color='red', linestyle='--')
+    inlay_text = Fdimer_prediction + 0.65 # Offset
+    plt.text(inlay_text, min(R2), f'Predicted FD = {Fdimer_prediction}', color='red', horizontalalignment='left')
+    plt.xlabel('Dimer Fraction (FD)')
+    plt.ylabel('Sum of Squared Residuals (R2)')
+    plt.title("Least-Squares Analysis")
+    plt.show()
+
 def fit_frac_dimer(pe, pm, pd):
     """ 
     This function is made to calculate the fraction of dimer
@@ -54,18 +67,15 @@ def fit_frac_dimer(pe, pm, pd):
     min_R2_index = R2.index(min_R2)
     Fdimer_prediction = FD[min_R2_index]
     
+    least_squares_plot(FD, R2, Fdimer_prediction)
+    
     print(f"Minimum R2 value: {min_R2}")
     print(f"Fdimer prediction: {Fdimer_prediction}")
-
-    
 
 
 
 def main():
-    # User input
-    peptide_concentrations = np.array([1.5, 0.75, 0.46875, 0.375, 0.1875, 0.09375])*1e-6
-    lipid_concentration = 75e-6
-    pl = peptide_concentrations/lipid_concentration
+
    
     # List of p1, p2, p3+ from experimental data
     # No value for peptide concentration 0.09375e-6
@@ -94,18 +104,57 @@ def main():
 
     fit_frac_dimer(pe[1], pm[1], pd[1])
 
-    pe_1=[sublist[0] for sublist in pe]
-    pe_2=[sublist[1] for sublist in pe]
-    pe_3=[sublist[2] for sublist in pe]
-    
-    print(pe_1)
-    print(pe_2)
-    print(pe_3)
-    
-    
-    
-    pass
-
 if __name__ == "__main__":
     main()
 
+
+# import numpy as np
+# import matplotlib.pyplot as plt
+# from scipy.stats import chi2
+
+# # Assuming you have the following data
+# N = 3  # Replace with the actual number of data points
+# PMX = np.random.rand(N)  # Replace with your actual monomer probability data
+# PDX = np.random.rand(N)  # Replace with your actual dimer probability data
+# Pexpt = np.random.rand(N)  # Replace with your actual experimental data
+
+# # Define FD, I, and X (if not already defined)
+# FD = 0.5  # Replace with the desired FD value
+# I = 1  # Replace with the desired index
+# X = np.arange(1, N + 1)
+
+# # Plot resulting Pfit
+# Pfit = [(1 - FD) * PMX[0] + FD * PDX[0], (1 - FD) * PMX[1] + FD * PDX[1], (1 - FD) * PMX[2] + FD * PDX[2]
+
+# # Outputs Pfit
+# # Replace the following lines with your actual output code (e.g., GUI updates or print statements)
+# print(f"Pfit1 Value: {Pfit[0]}")
+# print(f"Pfit2 Value: {Pfit[1]}")
+# print(f"Pfit3 Value: {Pfit[2]}")
+
+# # Plot Pfit
+# plt.bar(X, Pfit)
+# plt.xlabel('X')
+# plt.ylabel('Pfit')
+# plt.title('Pfit Distribution')
+# plt.show()
+
+# # Chi-squared analysis
+# # H0: the expt and fitted distributions are the same
+# # H1: the expt and fitted distributions are different
+# chi2_value = 0
+# for k in range(N):
+#     chi2_value += ((Pexpt[k] - Pfit[k]) ** 2) / Pfit[k]
+
+# # Calculate the p-value using the chi-squared distribution
+# p_value = 1 - chi2.cdf(chi2_value, N - 1)
+
+# # Replace the following lines with your actual output code (e.g., GUI updates or print statements)
+# print(f"Chi-squared Value: {chi2_value}")
+# print(f"P-value: {p_value}")
+
+# # Check if p-value is greater than 0.05
+# if p_value > 0.05:
+#     print("The distributions are different")
+# else:
+#     print("The distributions are the same")

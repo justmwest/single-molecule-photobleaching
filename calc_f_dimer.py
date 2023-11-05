@@ -23,14 +23,14 @@ def least_squares_plot(fd, r2, fd_pred):
     """
     plt.semilogy(fd, r2)
     plt.axvline(x=fd_pred, color='red', linestyle='--')
-    inlay_text = fd_pred + 0.65 # Offset
-    plt.text(inlay_text, min(r2), f'Predicted FD = {fd_pred}', color='red', horizontalalignment='left')
+    inlay_text = 0.35 # Horizontal position of inlay
+    plt.text(inlay_text, max(r2), f'Predicted FD = {fd_pred}', color='red', horizontalalignment='left')
     plt.xlabel('Dimer Fraction (FD)')
     plt.ylabel('Sum of Squared Residuals (R2)')
     plt.title("Least-Squares Analysis")
     plt.show()
 
-def fit_frac_dimer(pe, pm, pd):
+def fit_frac_dimer(pe, pm, pd, show_plot=True):
     """
     This function is made to calculate the fraction of dimer
     by minimization of the sum of squared residuals between simulated
@@ -57,26 +57,19 @@ def fit_frac_dimer(pe, pm, pd):
             total_sum += (pe[k] - pfit) ** 2
         r2.append(total_sum)
 
-    # Plotting the results
-    plt.semilogy(fd_array, r2)
-    plt.xlabel('Dimer Fraction (FD)')
-    plt.ylabel('Sum of Squared Residuals (R2)')
-    plt.title('Least-Squares Analysis')
-    plt.show()
-
     # Minimum R2 value and Fdimer prediction
     min_r2 = min(r2)
     min_r2_index = r2.index(min_r2)
     fd_pred = fd_array[min_r2_index]
 
-    least_squares_plot(fd_array, r2, fd_pred)
-
-    print(f"Minimum R2 value: {min_r2}")
-    print(f"Fdimer prediction: {fd_pred}")
+    if show_plot:
+        least_squares_plot(fd_array, r2, fd_pred)
 
     pfit = calc_pfit(pe, pm, pd, fd_pred)
 
     chi_squared(pe, pfit)
+
+    return fd_pred
 
 def calc_pfit(pe, pm, pd, fd_pred):
     """
@@ -107,15 +100,11 @@ def chi_squared(pe, pfit):
     # Calculate the p-value using the chi-squared distribution
     p_value = 1 - chi2.cdf(chi2_value, n - 1)
 
-    # Replace the following lines with your actual output code (e.g., GUI updates or print statements)
-    print(f"Chi-squared Value: {chi2_value}")
-    print(f"P-value: {p_value}")
-
     # Check if p-value is greater than 0.05
     if p_value > 0.05:
-        print("The distributions are statistically different")
+        print(f"The experimental and fitted probabilities are statistically different. p = {p_value:.3f} (fail).")
     else:
-        print("The distributions are statistically the same")
+        print("The experimental and fitted probabilities are statistically the same. p = {p_value:.3f} (success).")
 
 
 

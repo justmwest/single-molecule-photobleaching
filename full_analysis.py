@@ -52,15 +52,15 @@ peptide_concentrations = np.array([1.5, 0.75, 0.46875, 0.375, 0.1875]) * 1e-6
 
 # Experimentally determined probabilities of finding 1, 2, or 3+ photobleaching
 # steps. Must be in the same order as peptide concentrations.
-p_exp_list = [[0.024451410660000002, 0.05141065831, 0.02413793103],
-              [0.04580645161000001, 0.041612903230000005, 0.012580645159999999],
-              [0.061494252869999995, 0.0316091954, 0.0068965517240000005],
-              [0.0686, 0.0264, 0.005],
-              [0.07292225201, 0.023056300270000003, 0.004021447721]]
+p_exp_list = [[0.24451410660000002, 0.5141065831, 0.2413793103],
+              [0.4580645161000001, 0.41612903230000005, 0.12580645159999999],
+              [0.61494252869999995, 0.316091954, 0.068965517240000005],
+              [0.686, 0.264, 0.05],
+              [0.7292225201, 0.23056300270000003, 0.04021447721]]
 
 # Reference values
 lipid_area = 68.3  # Å^2 for POPC at 30°C. Kučerka et al. 2005
-smalp_core_radius_mean = 38  # Å Jamshad et al. 2015
+smalp_core_radius_mean = 25  # Å Jamshad et al. 2015
 smalp_core_radius_std_dev = 2  # Å
 peptide_radius = 6  # Å, if helix diameter is 12 Å.
 
@@ -83,7 +83,6 @@ smalp_core_radius_distribution = norm(loc=smalp_core_radius_mean,
                                       scale=smalp_core_radius_std_dev)
 
 # plot experimental data
-
 p_monomer_list = []
 p_dimer_list = []
 f_dimer_list = []
@@ -107,6 +106,9 @@ for peptide_concentration, pe in zip(peptide_concentrations, p_exp_list):
           f"{smalp_core_radius_mean}.")
 
     peptides_per_smalp = n_peptides / n_smalps
+    # Use the ratio of peptides to SMALPs to calculate how many peptides
+    # to simulate. This is because the calculations would be way too slow 
+    # if we simulated the real number of peptides and SMALPs.
     n_peptides_simulated = round(n_simulated_smalps * peptides_per_smalp)
 
     print(f"With {peptides_per_smalp:.2f} peptides per SMALP, simulating "
@@ -138,6 +140,7 @@ for peptide_concentration, pe in zip(peptide_concentrations, p_exp_list):
     f_dimer_list.append(fd_pred)
 
 # Calculate delta G
+pl_list = peptide_concentrations / lipid_concentration
 k_eq, fit_params = find_equilibrium_constant(pl_list, f_dimer_list)
 delta_g = calc_delta_g(k_eq)
 
@@ -154,7 +157,6 @@ print(
 
 
 # Plot simulation results
-pl_list = peptide_concentrations / lipid_concentration
 p1e, p2e, p3e = zip(*p_exp_list)
 plot_probability_curves(pl_list, p1e, p2e, p3e, title="Experimental data")
 

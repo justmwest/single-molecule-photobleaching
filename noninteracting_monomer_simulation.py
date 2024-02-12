@@ -55,7 +55,7 @@ def calc_fraction_unoccupied():
     Ref section 4.2.2
     For now, we assume no SMALPs are off-limits, since the smallest size we
     consider, radius 28, has an area of 2463 Å^2 and a peptide dimer has a
-    radius of 226 Å^2.
+    area of 226 Å^2.
     Update with empirical data if possible.
     """
     return 0
